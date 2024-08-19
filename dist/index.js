@@ -27,31 +27,46 @@ const MarkdownIt = require("markdown-it");
 const mila = require("markdown-it-link-attributes");
 const md = new MarkdownIt();
 md.use(mila, { attrs: { target: '_blank', rel: 'noopener' } });
-// Monkedo API URL, If local development, use 'http://localhost:3000/api/v1/ipaas'
-const apiUrl = 'http://localhost:3000/api/v1/ipaas';
-let pId = '';
-let popupWindows = {};
 let credentialModal;
+const apiUrl = 'http://localhost:3000/api/v1/ipaas';
+let theme = {
+    headers: {
+        h1: 'h1',
+        h2: 'h2',
+        h3: 'h3',
+        h4: 'h4',
+        h5: 'h5',
+        h6: 'h6',
+    },
+    buttons: {
+        modalClose: 'btn btn-sm btn-secondary',
+        save: 'btn btn-primary float-end'
+    }
+};
+let pId = '';
 class Monkedo {
-    constructor(projectId) {
+    constructor(projectId, themeOptions) {
         pId = projectId;
+        if (themeOptions)
+            this.setTheme(themeOptions);
     }
     connectApp(params) {
         return __awaiter(this, void 0, void 0, function* () {
             const { userId, appKey } = params, others = __rest(params, ["userId", "appKey"]);
+            if (!userId || !appKey)
+                throw '"userId" and "appKey" are required!';
             const { data } = yield axios_1.default.post(`${apiUrl}/projects/${pId}/users/${userId}/connections/${appKey}`, others);
-            // Open popup window to connect app
             if (typeof data === 'string' && data.startsWith('http')) {
-                yield this.openConsentWindow(data, appKey).catch((error) => {
-                    throw error;
-                });
+                window.open(data, null, 'toolbar=0,width=650,height=750');
             }
-            return 'Connected successfully';
+            // FIXME Library should return the success message
         });
     }
     getAppCredentialInfo(params) {
         return __awaiter(this, void 0, void 0, function* () {
             const { userId, appKey } = params;
+            if (!userId || !appKey)
+                throw '"userId" and "appKey" are required!';
             const { data } = yield axios_1.default.get(`${apiUrl}/projects/${pId}/apps/${appKey}/credential-info`);
             this.createForm(Object.assign(Object.assign({}, data), { userId, appKey }));
         });
@@ -62,7 +77,7 @@ class Monkedo {
             const form = event.target;
             const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
-            this.connectApp({
+            yield this.connectApp({
                 userId,
                 appKey,
                 connectionFields: data,
@@ -70,60 +85,69 @@ class Monkedo {
                 .then(() => credentialModal.hide())
                 .catch((error) => {
                 var _a, _b, _c, _d;
-                const form = document.getElementById('credentialForm');
-                const errorDiv = document.getElementById('connectAppError');
+                const form = document.getElementById('monkedo-credential-form');
+                const errorDiv = document.getElementById('monkedo-connect-app-error');
                 if (errorDiv)
                     errorDiv.remove();
                 const div = document.createElement('div');
-                div.id = 'connectAppError';
+                div.id = 'monkedo-connect-app-error';
                 div.className = 'alert alert-danger';
                 let message = ((_b = (_a = error.response) === null || _a === void 0 ? void 0 : _a.data) === null || _b === void 0 ? void 0 : _b.message) || error;
                 if (((_d = (_c = error.response) === null || _c === void 0 ? void 0 : _c.data) === null || _d === void 0 ? void 0 : _d.code) === ErrorCodes.CONNECTION_ALREADY_EXISTS) {
                     message = 'Connection already exists. Please disconnect the existing connection to connect again.';
                 }
+                else if (message === 'Request failed with status code 401') {
+                    message = 'Unauthorized. Please check your credentials.';
+                }
                 div.textContent = message;
                 form.insertBefore(div, form.lastElementChild);
                 setTimeout(() => {
-                    const errorDiv = document.getElementById('connectAppError');
+                    const errorDiv = document.getElementById('monkedo-connect-app-error');
                     if (errorDiv)
                         errorDiv.remove();
-                }, 50000);
+                }, 10000);
             });
         });
     }
-    openConsentWindow(url, appKey = '') {
-        return __awaiter(this, void 0, void 0, function* () {
-            let popup;
-            return new Promise((resolve, reject) => {
-                popup = window.open(url, null, 'toolbar=0,width=650,height=750');
-                if (!popup) {
-                    reject('Please disable your popup blocker and try again.');
+    setTheme(themeOptions) {
+        Object.entries(themeOptions).forEach(([key, value]) => {
+            if (!theme[key])
+                return;
+            if (typeof value !== 'object') {
+                theme[key] = value;
+                return;
+            }
+            Object.entries(value).forEach(([k, v]) => {
+                if (!theme[key][k])
                     return;
-                }
-                if (appKey) {
-                    if (!popupWindows[appKey])
-                        popupWindows[appKey] = [];
-                    popupWindows[appKey].push(popup);
-                }
-                // Check that window is closed.
-                const timer = setInterval(() => {
-                    if (popup.closed) {
-                        clearInterval(timer);
-                        resolve();
-                    }
-                }, 1000);
+                theme[key][k] = v;
             });
         });
+    }
+    closeModal() {
+        credentialModal.hide();
     }
     createForm(data) {
         return __awaiter(this, void 0, void 0, function* () {
-            document.body.insertAdjacentHTML('beforeend', credentialForm);
-            credentialModal = new bootstrap.Modal(document.getElementById('credentialModal'));
+            if (credentialModal) {
+                credentialModal.show();
+                return;
+            }
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            const templateModal = document.getElementById('monkedo-modal');
+            credentialModal = new bootstrap.Modal(templateModal);
             credentialModal.show();
-            document.getElementById('formTitle').textContent = `Connect ${data.appName}`;
-            document.getElementById('formDesc').innerHTML = md.render(data.desc);
-            const form = document.getElementById('credentialForm');
-            form.innerHTML = '';
+            const modalHeader = document.getElementById('monkedo-modal-header');
+            const h5 = document.createElement('h5');
+            h5.className = `${theme.headers.h5} modal-title`;
+            h5.textContent = `Connect ${data.appName}`;
+            modalHeader.insertBefore(h5, modalHeader.lastElementChild);
+            const modalBody = document.getElementById('monkedo-modal-body');
+            const desc = document.createElement('p');
+            desc.innerHTML = md.render(data.desc);
+            modalBody.appendChild(desc);
+            const form = document.createElement('form');
+            form.id = 'monkedo-credential-form';
             data.fields.forEach((field) => {
                 const formGroup = document.createElement('div');
                 formGroup.className = 'mb-3';
@@ -144,26 +168,25 @@ class Monkedo {
                 form.appendChild(formGroup);
             });
             const submitButton = document.createElement('button');
-            submitButton.className = 'btn btn-primary float-end';
+            submitButton.id = 'monkedo-connect-app';
+            submitButton.className = theme.buttons.save;
             submitButton.textContent = 'Save';
             form.appendChild(submitButton);
             form.addEventListener('submit', (event) => this.handleSubmit(event, data.userId, data.appKey));
+            document.getElementById('monkedo-modal-close').addEventListener('click', () => this.closeModal());
+            modalBody.appendChild(form);
         });
     }
 }
 exports.Monkedo = Monkedo;
-const credentialForm = `
-<div class="modal fade" id="credentialModal" tabindex="-1">
+const modalHTML = `
+<div id="monkedo-modal" class="modal fade">
 	<div class="modal-dialog">
 		<div class="modal-content">
-			<div class="modal-header">
-				<h5 id="formTitle" class="modal-title"></h5>
-				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" ngbTooltip="Close"></button>
+			<div id="monkedo-modal-header" class="modal-header">
+				<button id="monkedo-modal-close" type="button" class="${theme.buttons.modalClose}">Close</button>
 			</div>
-			<div class="modal-body">
-				<p id="formDesc" class="markdown"></p>
-				<form id="credentialForm"></form>
-			</div>
+			<div id="monkedo-modal-body" class="modal-body"></div>
 		</div>
 	</div>
 </div>
