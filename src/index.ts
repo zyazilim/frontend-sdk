@@ -9,7 +9,7 @@ md.use(mila, { attrs: { target: '_blank', rel: 'noopener' } });
 
 let credentialModal: bootstrap.Modal;
 
-const apiUrl = 'http://localhost:3000/api/v1/ipaas';
+const apiUrl = 'https://app.monkedo.com/api/v1/ipaas';
 let theme: ThemeOptions = {
 	headers: {
 		h1: 'h1',
