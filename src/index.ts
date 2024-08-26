@@ -33,17 +33,23 @@ export class Monkedo {
 		if (themeOptions) this.setTheme(themeOptions);
 	}
 
-	async connectApp(params: Record<string, any>): Promise<void> {
+	async checkUserConnections(userId: string, appKeys: string[]): Promise<Record<string, 'connected' | 'not-connected' | 'invalid'>> {
+		if (!userId || !appKeys.length) throw '"userId" and "appKeys" are required!';
+
+		const { data } = await axios.get(`${apiUrl}/projects/${pId}/users/${userId}/connections/status?appKeys=${appKeys.join(',')}`);
+
+		return data;
+	}
+
+	async connectApp(params: Record<string, any>): Promise<string> {
 		const { userId, appKey, ...others } = params;
 		if (!userId || !appKey) throw '"userId" and "appKey" are required!';
 
 		const { data } = await axios.post(`${apiUrl}/projects/${pId}/users/${userId}/connections/${appKey}`, others);
 
-		if (typeof data === 'string' && data.startsWith('http')) {
-			window.open(data, null, 'toolbar=0,width=650,height=750');
-		}
-
-		// FIXME Library should return the success message
+		// If the connection URL (only oauth apps) is returned, open a popup to connect the app.
+		if (typeof data === 'string' && data.startsWith('http')) return await this.openPopupAndListen(data, userId, appKey);
+		return 'CONNECTION_SUCCESS';
 	}
 
 	async getAppCredentialInfo(params: Record<string, any>): Promise<void> {
@@ -67,7 +73,7 @@ export class Monkedo {
 			appKey,
 			connectionFields: data,
 		})
-			.then(() => credentialModal.hide())
+			.then(() => this.closeModal())
 			.catch((error) => {
 				const form = document.getElementById('monkedo-credential-form') as HTMLFormElement;
 
@@ -114,13 +120,13 @@ export class Monkedo {
 
 	closeModal(): void {
 		credentialModal.hide();
+
+		const modal = document.getElementById('monkedo-modal');
+		if (modal) modal.remove();
 	}
 
 	private async createForm(data: Record<string, any>): Promise<void> {
-		if (credentialModal) {
-			credentialModal.show();
-			return;
-		}
+		if (credentialModal) this.closeModal();
 
 		document.body.insertAdjacentHTML('beforeend', modalHTML);
 
@@ -176,6 +182,23 @@ export class Monkedo {
 		document.getElementById('monkedo-modal-close').addEventListener('click', () => this.closeModal());
 
 		modalBody.appendChild(form);
+	}
+
+	private async openPopupAndListen(url: string, userId: string, appKey: string): Promise<string> {
+		return new Promise((resolve) => {
+			const popup = window.open(url, 'oauthPopup', 'width=600,height=700');
+			if (!popup) return resolve('POPUP_BLOCKED');
+
+			const popupCheckInterval = setInterval(async () => {
+				if (popup.closed) {
+					const connections = await this.checkUserConnections(userId, [appKey]);
+					clearInterval(popupCheckInterval);
+
+					if (connections[appKey] === 'connected') resolve('CONNECTION_SUCCESS');
+					else resolve('CONNECTION_FAILED');
+				}
+			}, 500);
+		});
 	}
 }
 

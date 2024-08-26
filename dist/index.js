@@ -50,16 +50,24 @@ class Monkedo {
         if (themeOptions)
             this.setTheme(themeOptions);
     }
+    checkUserConnections(userId, appKeys) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!userId || !appKeys.length)
+                throw '"userId" and "appKeys" are required!';
+            const { data } = yield axios_1.default.get(`${apiUrl}/projects/${pId}/users/${userId}/connections/status?appKeys=${appKeys.join(',')}`);
+            return data;
+        });
+    }
     connectApp(params) {
         return __awaiter(this, void 0, void 0, function* () {
             const { userId, appKey } = params, others = __rest(params, ["userId", "appKey"]);
             if (!userId || !appKey)
                 throw '"userId" and "appKey" are required!';
             const { data } = yield axios_1.default.post(`${apiUrl}/projects/${pId}/users/${userId}/connections/${appKey}`, others);
-            if (typeof data === 'string' && data.startsWith('http')) {
-                window.open(data, null, 'toolbar=0,width=650,height=750');
-            }
-            // FIXME Library should return the success message
+            // If the connection URL (only oauth apps) is returned, open a popup to connect the app.
+            if (typeof data === 'string' && data.startsWith('http'))
+                return yield this.openPopupAndListen(data, userId, appKey);
+            return 'CONNECTION_SUCCESS';
         });
     }
     getAppCredentialInfo(params) {
@@ -82,7 +90,7 @@ class Monkedo {
                 appKey,
                 connectionFields: data,
             })
-                .then(() => credentialModal.hide())
+                .then(() => this.closeModal())
                 .catch((error) => {
                 var _a, _b, _c, _d;
                 const form = document.getElementById('monkedo-credential-form');
@@ -126,13 +134,14 @@ class Monkedo {
     }
     closeModal() {
         credentialModal.hide();
+        const modal = document.getElementById('monkedo-modal');
+        if (modal)
+            modal.remove();
     }
     createForm(data) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (credentialModal) {
-                credentialModal.show();
-                return;
-            }
+            if (credentialModal)
+                this.closeModal();
             document.body.insertAdjacentHTML('beforeend', modalHTML);
             const templateModal = document.getElementById('monkedo-modal');
             credentialModal = new bootstrap.Modal(templateModal);
@@ -175,6 +184,25 @@ class Monkedo {
             form.addEventListener('submit', (event) => this.handleSubmit(event, data.userId, data.appKey));
             document.getElementById('monkedo-modal-close').addEventListener('click', () => this.closeModal());
             modalBody.appendChild(form);
+        });
+    }
+    openPopupAndListen(url, userId, appKey) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return new Promise((resolve) => {
+                const popup = window.open(url, 'oauthPopup', 'width=600,height=700');
+                if (!popup)
+                    return resolve('POPUP_BLOCKED');
+                const popupCheckInterval = setInterval(() => __awaiter(this, void 0, void 0, function* () {
+                    if (popup.closed) {
+                        const connections = yield this.checkUserConnections(userId, [appKey]);
+                        clearInterval(popupCheckInterval);
+                        if (connections[appKey] === 'connected')
+                            resolve('CONNECTION_SUCCESS');
+                        else
+                            resolve('CONNECTION_FAILED');
+                    }
+                }), 500);
+            });
         });
     }
 }

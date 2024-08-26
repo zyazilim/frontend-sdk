@@ -1,11 +1,13 @@
 export declare class Monkedo {
     constructor(projectId: string, themeOptions?: ThemeOptions);
-    connectApp(params: Record<string, any>): Promise<void>;
+    checkUserConnections(userId: string, appKeys: string[]): Promise<Record<string, 'connected' | 'not-connected' | 'invalid'>>;
+    connectApp(params: Record<string, any>): Promise<string>;
     getAppCredentialInfo(params: Record<string, any>): Promise<void>;
     handleSubmit(event: Event, userId: string, appKey: string): Promise<void>;
     setTheme(themeOptions: ThemeOptions): void;
     closeModal(): void;
     private createForm;
+    private openPopupAndListen;
 }
 export declare enum ErrorCodes {
     INVALID_PARAMETER = 1,
