@@ -149,13 +149,16 @@ class Monkedo {
     }
     closeModal() {
         const dialog = document.getElementById('monkedo-dialog');
-        if (dialog)
+        if (dialog) {
             dialog.remove();
+            document.getElementById('monkedo-sdk-style').remove();
+        }
     }
     createForm(data) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a, _b, _c, _d, _e, _f, _g;
             document.body.insertAdjacentHTML('beforeend', modalHTML);
+            document.head.insertAdjacentHTML('beforeend', modalStyle);
             const dialog = document.getElementById('monkedo-dialog');
             if ((_a = theme.classes) === null || _a === void 0 ? void 0 : _a.dialog)
                 dialog.classList.add(...theme.classes.dialog.split(' '));
@@ -291,6 +294,13 @@ const modalHTML = `
 	</div>
 	<div id="monkedo-dialog-body"></div>
 </div>
+`;
+const modalStyle = `
+<style id="monkedo-sdk-style">
+	dialog#monkedo-dialog::backdrop {
+		background-color: rgba(0, 0, 0, 0.5);
+	}
+</style>
 `;
 var ErrorCodes;
 (function (ErrorCodes) {

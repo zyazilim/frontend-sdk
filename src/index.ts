@@ -133,11 +133,15 @@ export class Monkedo {
 
 	closeModal(): void {
 		const dialog = document.getElementById('monkedo-dialog');
-		if (dialog) dialog.remove();
+		if (dialog) {
+			dialog.remove();
+			document.getElementById('monkedo-sdk-style')!.remove();
+		}
 	}
 
 	private async createForm(data: Record<string, any>): Promise<void> {
 		document.body.insertAdjacentHTML('beforeend', modalHTML);
+		document.head.insertAdjacentHTML('beforeend', modalStyle);
 
 		const dialog = document.getElementById('monkedo-dialog') as HTMLDialogElement;
 		if (theme.classes?.dialog) dialog.classList.add(...theme.classes.dialog.split(' '));
@@ -278,6 +282,13 @@ const modalHTML = `
 	</div>
 	<div id="monkedo-dialog-body"></div>
 </div>
+`;
+const modalStyle = `
+<style id="monkedo-sdk-style">
+	dialog#monkedo-dialog::backdrop {
+		background-color: rgba(0, 0, 0, 0.5);
+	}
+</style>
 `;
 
 export enum ErrorCodes {
