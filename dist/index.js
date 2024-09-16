@@ -87,6 +87,7 @@ class Monkedo {
                 throw '"userId" and "appKey" are required!';
             const { data } = yield axios_1.default.get(`${apiUrl}/projects/${project}/apps/${appKey}/credential-info`);
             this.createForm(Object.assign(Object.assign({}, data), { userId, appKey }));
+            return yield this.listenModalClose(userId, appKey);
         });
     }
     handleSubmit(event, userId, appKey) {
@@ -262,6 +263,22 @@ class Monkedo {
                     if (popup.closed) {
                         const connections = yield this.checkUserConnections(userId, [appKey]);
                         clearInterval(popupCheckInterval);
+                        if (connections[appKey] === 'connected')
+                            resolve('CONNECTION_SUCCESS');
+                        else
+                            resolve('CONNECTION_FAILED');
+                    }
+                }), 500);
+            });
+        });
+    }
+    listenModalClose(userId, appKey) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return new Promise((resolve) => {
+                const modalCheckInterval = setInterval(() => __awaiter(this, void 0, void 0, function* () {
+                    if (!document.getElementById('monkedo-dialog')) {
+                        const connections = yield this.checkUserConnections(userId, [appKey]);
+                        clearInterval(modalCheckInterval);
                         if (connections[appKey] === 'connected')
                             resolve('CONNECTION_SUCCESS');
                         else
