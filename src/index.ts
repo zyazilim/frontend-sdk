@@ -250,8 +250,8 @@ export class Monkedo {
 
 			const popupCheckInterval = setInterval(async () => {
 				if (popup.closed) {
-					const connections = await this.checkUserConnections(userId, [appKey]);
 					clearInterval(popupCheckInterval);
+					const connections = await this.checkUserConnections(userId, [appKey]);
 
 					if (connections[appKey] === 'connected') resolve('CONNECTION_SUCCESS');
 					else resolve('CONNECTION_FAILED');
@@ -264,8 +264,8 @@ export class Monkedo {
 		return new Promise((resolve) => {
 			const modalCheckInterval = setInterval(async () => {
 				if (!document.getElementById('monkedo-dialog')) {
-					const connections = await this.checkUserConnections(userId, [appKey]);
 					clearInterval(modalCheckInterval);
+					const connections = await this.checkUserConnections(userId, [appKey]);
 
 					if (connections[appKey] === 'connected') resolve('CONNECTION_SUCCESS');
 					else resolve('CONNECTION_FAILED');

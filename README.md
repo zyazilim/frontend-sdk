@@ -23,42 +23,36 @@ To use the Monkedo Frontend SDK, you need to create an instance of the `Monkedo`
 ```typescript
 import { Monkedo } from 'monkedo-frontend-sdk'
 
-const monkedo = new Monkedo('your-project-id');
+const monkedo = new Monkedo('your-project-id', 'your-app-name');
 
-// Connect App
-monkedo.connectApp({
-	appKey,
-	userId,
-}).then(() => {
-	console.log('Connected to the app');
-}).catch((error) => {
-	console.error('Failed to connect to the app', error);
-});
+/**
+ * Connect an app to the Monkedo IPaaS platform.
+ * 
+ * @param appKey The integration app key.
+ * @param userId The user ID.
+ * @returns The result of the connection. 3 possible values:
+ * - "CONNECTION_SUCCESS": The app was successfully connected.
+ * - "CONNECTION_FAILED": The app connection failed.
+ * - "POPUP_BLOCKED": The popup was blocked by the browser.
+ */
+const result = await monkedo.connectApp({ appKey, userId });
 
-// Get App Credential Informations
-monkedo.getAppCredentialInfo(appKey).then((appCredentialInfo) => {
-	console.log('App Credential Info:', appCredentialInfo);
-}).catch((error) => {
-	console.error('Failed to get app credential info', error);
-});
+/**
+ * Get the app credential info and open the connection form.
+ * 
+ * @param appKey The integration app key.
+ * @returns The result of the connection. 3 possible values:
+ * - "CONNECTION_SUCCESS": The app was successfully connected.
+ * - "CONNECTION_FAILED": The app connection failed.
+ */
+const credentialInfo = await monkedo.getAppCredentialInfo(appKey);
+
+/**
+ * Check if the user has connected to the specified integration apps.
+ * 
+ * @param userId The user ID.
+ * @param appKeys The integration app keys. Split by comma.
+ * @returns The result of the check. { [appKey: string]: "connected" | "not-connected" | "invalid" }
+ */
+const result = await monkedo.checkUserConnections(userId, appKeys);
 ```
-
-## Local Development
-
-To run the library locally, you can use the following commands:
-
-```bash
-# Install dependencies
-npm install
-
-# Build the library
-npm run build
-
-# Link the library
-npm link path/to/monkedo-frontend-sdk
-
-# Install the library in your project
-npm link monkedo-frontend-sdk
-```
-
-Then, you can use the library in your project.
