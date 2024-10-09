@@ -38,16 +38,6 @@ const monkedo = new Monkedo('your-project-id', 'your-app-name');
 const result = await monkedo.connectApp({ appKey, userId });
 
 /**
- * Get the app credential info and open the connection form.
- * 
- * @param appKey The integration app key.
- * @returns The result of the connection. 3 possible values:
- * - "CONNECTION_SUCCESS": The app was successfully connected.
- * - "CONNECTION_FAILED": The app connection failed.
- */
-const credentialInfo = await monkedo.getAppCredentialInfo(appKey);
-
-/**
  * Check if the user has connected to the specified integration apps.
  * 
  * @param userId The user ID.
