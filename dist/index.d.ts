@@ -10,7 +10,7 @@ export declare class Monkedo {
     constructor(projectId: string, appName: string, themeOptions?: ThemeOptions);
     checkUserConnections(userId: string, appKeys: string[]): Promise<Record<string, 'connected' | 'not-connected' | 'invalid'>>;
     connectApp(params: CredentialParams): Promise<string>;
-    getAppCredentialInfo(params: CredentialParams): Promise<string>;
+    openConnectionForm(params: CredentialParams): Promise<string>;
     handleSubmit(event: Event, userId: string, appKey: string): Promise<void>;
     setTheme(themeOptions: ThemeOptions): void;
     closeModal(): void;
@@ -21,8 +21,17 @@ export declare class Monkedo {
 }
 export declare enum ErrorCodes {
     INVALID_PARAMETER = 1,
-    CONNECTION_ALREADY_EXISTS = 222
+    CONNECTION_ALREADY_EXISTS = 222,
+    INTEGRATION_NOT_FOUND = 600,
+    PROJECT_NOT_FOUND = 901
 }
+export type ConnectResponse = {
+    success: boolean;
+    /**
+     * If the success is false, this message will be returned.
+     */
+    message?: string;
+};
 type ThemeOptions = {
     styles?: {
         dialog?: string;

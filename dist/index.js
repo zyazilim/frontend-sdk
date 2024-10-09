@@ -76,14 +76,18 @@ class Monkedo {
             const { userId, appKey } = params, others = __rest(params, ["userId", "appKey"]);
             if (!userId || !appKey)
                 throw '"userId" and "appKey" are required!';
+            const { data: isOAuth } = yield axios_1.default.get(`${apiUrl}/projects/${project}/apps/${appKey}`);
+            if (!Object.keys(others).length && !isOAuth) {
+                return this.openConnectionForm({ userId, appKey });
+            }
             const { data } = yield axios_1.default.post(`${apiUrl}/projects/${project}/users/${userId}/connections/${appKey}`, others);
             // If the connection URL (only oauth apps) is returned, open a popup to connect the app.
             if (typeof data === 'string' && data.startsWith('http'))
-                return yield this.openPopupAndListen(data, userId, appKey);
+                return this.openPopupAndListen(data, userId, appKey);
             return 'CONNECTION_SUCCESS';
         });
     }
-    getAppCredentialInfo(params) {
+    openConnectionForm(params) {
         return __awaiter(this, void 0, void 0, function* () {
             const { userId, appKey } = params;
             if (!userId || !appKey)
@@ -247,7 +251,7 @@ class Monkedo {
             const showWhenFields = data.fields
                 .filter((field) => field.showWhen)
                 .map((field) => field.showWhen.key)
-                .filter((value, index, self) => self.indexOf(value) === index);
+                .filter((v, i, s) => s.indexOf(v) === i);
             if (showWhenFields.length) {
                 showWhenFields.forEach((field) => {
                     const mainField = data.fields.find((f) => f.name === field);
@@ -266,10 +270,7 @@ class Monkedo {
                     if (popup.closed) {
                         clearInterval(popupCheckInterval);
                         const connections = yield this.checkUserConnections(userId, [appKey]);
-                        if (connections[appKey] === 'connected')
-                            resolve('CONNECTION_SUCCESS');
-                        else
-                            resolve('CONNECTION_FAILED');
+                        resolve(connections[appKey] === 'connected' ? 'CONNECTION_SUCCESS' : 'CONNECTION_FAILED');
                     }
                 }), 500);
             });
@@ -282,10 +283,7 @@ class Monkedo {
                     if (!document.getElementById('monkedo-dialog')) {
                         clearInterval(modalCheckInterval);
                         const connections = yield this.checkUserConnections(userId, [appKey]);
-                        if (connections[appKey] === 'connected')
-                            resolve('CONNECTION_SUCCESS');
-                        else
-                            resolve('CONNECTION_FAILED');
+                        resolve(connections[appKey] === 'connected' ? 'CONNECTION_SUCCESS' : 'CONNECTION_FAILED');
                     }
                 }), 500);
             });
@@ -320,10 +318,16 @@ const modalStyle = `
 	dialog#monkedo-dialog::backdrop {
 		background-color: rgba(0, 0, 0, 0.5);
 	}
+
+	dialog#monkedo-dialog img {
+		max-width: 100%;
+	}
 </style>
 `;
 var ErrorCodes;
 (function (ErrorCodes) {
     ErrorCodes[ErrorCodes["INVALID_PARAMETER"] = 1] = "INVALID_PARAMETER";
     ErrorCodes[ErrorCodes["CONNECTION_ALREADY_EXISTS"] = 222] = "CONNECTION_ALREADY_EXISTS";
+    ErrorCodes[ErrorCodes["INTEGRATION_NOT_FOUND"] = 600] = "INTEGRATION_NOT_FOUND";
+    ErrorCodes[ErrorCodes["PROJECT_NOT_FOUND"] = 901] = "PROJECT_NOT_FOUND";
 })(ErrorCodes || (exports.ErrorCodes = ErrorCodes = {}));

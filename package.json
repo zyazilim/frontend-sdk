@@ -2,7 +2,7 @@
 	"name": "@monkedo/frontend-sdk",
 	"title": "Monkedo Frontend SDK",
 	"description": "JavaScript SDK for Monkedo",
-	"version": "1.0.2",
+	"version": "2.0.0",
 	"main": "dist/index.js",
 	"private": false,
 	"homepage": "https://monkedo.com",

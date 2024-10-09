@@ -54,14 +54,19 @@ export class Monkedo {
 		const { userId, appKey, ...others } = params;
 		if (!userId || !appKey) throw '"userId" and "appKey" are required!';
 
+		const { data: isOAuth } = await axios.get(`${apiUrl}/projects/${project}/apps/${appKey}`);
+		if (!Object.keys(others).length && !isOAuth) {
+			return this.openConnectionForm({ userId, appKey });
+		}
+
 		const { data } = await axios.post(`${apiUrl}/projects/${project}/users/${userId}/connections/${appKey}`, others);
 
 		// If the connection URL (only oauth apps) is returned, open a popup to connect the app.
-		if (typeof data === 'string' && data.startsWith('http')) return await this.openPopupAndListen(data, userId, appKey);
+		if (typeof data === 'string' && data.startsWith('http')) return this.openPopupAndListen(data, userId, appKey);
 		return 'CONNECTION_SUCCESS';
 	}
 
-	async getAppCredentialInfo(params: CredentialParams): Promise<string> {
+	async openConnectionForm(params: CredentialParams): Promise<string> {
 		const { userId, appKey } = params;
 		if (!userId || !appKey) throw '"userId" and "appKey" are required!';
 
@@ -234,7 +239,7 @@ export class Monkedo {
 		const showWhenFields = data.fields
 			.filter((field: Record<string, any>) => field.showWhen)
 			.map((field: Record<string, any>) => field.showWhen.key)
-			.filter((value: string, index: number, self: string[]) => self.indexOf(value) === index);
+			.filter((v: string, i: number, s: string[]) => s.indexOf(v) === i);
 		if (showWhenFields.length) {
 			showWhenFields.forEach((field: string) => {
 				const mainField = data.fields.find((f: Record<string, any>) => f.name === field);
@@ -251,10 +256,9 @@ export class Monkedo {
 			const popupCheckInterval = setInterval(async () => {
 				if (popup.closed) {
 					clearInterval(popupCheckInterval);
-					const connections = await this.checkUserConnections(userId, [appKey]);
 
-					if (connections[appKey] === 'connected') resolve('CONNECTION_SUCCESS');
-					else resolve('CONNECTION_FAILED');
+					const connections = await this.checkUserConnections(userId, [appKey]);
+					resolve(connections[appKey] === 'connected' ? 'CONNECTION_SUCCESS' : 'CONNECTION_FAILED');
 				}
 			}, 500);
 		});
@@ -265,16 +269,18 @@ export class Monkedo {
 			const modalCheckInterval = setInterval(async () => {
 				if (!document.getElementById('monkedo-dialog')) {
 					clearInterval(modalCheckInterval);
-					const connections = await this.checkUserConnections(userId, [appKey]);
 
-					if (connections[appKey] === 'connected') resolve('CONNECTION_SUCCESS');
-					else resolve('CONNECTION_FAILED');
+					const connections = await this.checkUserConnections(userId, [appKey]);
+					resolve(connections[appKey] === 'connected' ? 'CONNECTION_SUCCESS' : 'CONNECTION_FAILED');
 				}
 			}, 500);
 		});
 	}
 
-	private toggleInputs(input: { name: string, value: string | number }, fields: Record<string, any>[]): void {
+	private toggleInputs(
+		input: { name: string, value: string | number },
+		fields: Record<string, any>[]
+	): void {
 		fields.forEach((field) => {
 			if (field.showWhen?.key !== input.name) return;
 
@@ -304,12 +310,26 @@ const modalStyle = `
 	dialog#monkedo-dialog::backdrop {
 		background-color: rgba(0, 0, 0, 0.5);
 	}
+
+	dialog#monkedo-dialog img {
+		max-width: 100%;
+	}
 </style>
 `;
 
 export enum ErrorCodes {
 	INVALID_PARAMETER = 1,
 	CONNECTION_ALREADY_EXISTS = 222,
+	INTEGRATION_NOT_FOUND = 600,
+	PROJECT_NOT_FOUND = 901,
+}
+
+export type ConnectResponse = {
+	success: boolean;
+	/**
+	 * If the success is false, this message will be returned.
+	 */
+	message?: string;
 }
 
 type ThemeOptions = {

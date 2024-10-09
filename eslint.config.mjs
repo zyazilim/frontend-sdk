@@ -113,7 +113,7 @@ export default [{
 		}],
 
 		'max-len': ['error', {
-			code: 180,
+			code: 100,
 			ignoreComments: true,
 			ignoreRegExpLiterals: true,
 			ignoreStrings: true,
