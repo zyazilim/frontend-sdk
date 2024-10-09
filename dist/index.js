@@ -19,13 +19,16 @@ var __rest = (this && this.__rest) || function (s, e) {
         }
     return t;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ErrorCodes = exports.Monkedo = void 0;
-const axios_1 = require("axios");
-const MarkdownIt = require("markdown-it");
-const mila = require("markdown-it-link-attributes");
-const md = new MarkdownIt();
-md.use(mila, { attrs: { target: '_blank', rel: 'noopener' } });
+const axios_1 = __importDefault(require("axios"));
+const markdown_it_1 = __importDefault(require("markdown-it"));
+const markdown_it_link_attributes_1 = __importDefault(require("markdown-it-link-attributes"));
+const md = new markdown_it_1.default();
+md.use(markdown_it_link_attributes_1.default, { attrs: { target: '_blank', rel: 'noopener' } });
 const apiUrl = 'https://app.monkedo.com/api/v1/ipaas';
 let theme = {
     styles: {
@@ -261,8 +264,8 @@ class Monkedo {
                     return resolve('POPUP_BLOCKED');
                 const popupCheckInterval = setInterval(() => __awaiter(this, void 0, void 0, function* () {
                     if (popup.closed) {
-                        const connections = yield this.checkUserConnections(userId, [appKey]);
                         clearInterval(popupCheckInterval);
+                        const connections = yield this.checkUserConnections(userId, [appKey]);
                         if (connections[appKey] === 'connected')
                             resolve('CONNECTION_SUCCESS');
                         else
@@ -277,8 +280,8 @@ class Monkedo {
             return new Promise((resolve) => {
                 const modalCheckInterval = setInterval(() => __awaiter(this, void 0, void 0, function* () {
                     if (!document.getElementById('monkedo-dialog')) {
-                        const connections = yield this.checkUserConnections(userId, [appKey]);
                         clearInterval(modalCheckInterval);
+                        const connections = yield this.checkUserConnections(userId, [appKey]);
                         if (connections[appKey] === 'connected')
                             resolve('CONNECTION_SUCCESS');
                         else

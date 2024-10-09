@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-import * as MarkdownIt from 'markdown-it';
-import * as mila from 'markdown-it-link-attributes';
+import MarkdownIt from 'markdown-it';
+import mila from 'markdown-it-link-attributes';
 
 const md = new MarkdownIt();
 md.use(mila, { attrs: { target: '_blank', rel: 'noopener' } });

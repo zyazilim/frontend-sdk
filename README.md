@@ -7,13 +7,13 @@ This is the official Monkedo Frontend SDK. It is a JavaScript library that allow
 You can install the Monkedo Frontend SDK via npm:
 
 ```bash
-npm install monkedo-frontend-sdk
+npm install @monkedo/frontend-sdk
 ```
 
 or via pnpm:
 
 ```bash
-pnpm install monkedo-frontend-sdk
+pnpm install @monkedo/frontend-sdk
 ```
 
 ## Usage
@@ -21,7 +21,7 @@ pnpm install monkedo-frontend-sdk
 To use the Monkedo Frontend SDK, you need to create an instance of the `Monkedo` class and provide `your-project-id`:
 
 ```typescript
-import { Monkedo } from 'monkedo-frontend-sdk'
+import { Monkedo } from '@monkedo/frontend-sdk'
 
 const monkedo = new Monkedo('your-project-id', 'your-app-name');
 
@@ -56,3 +56,7 @@ const credentialInfo = await monkedo.getAppCredentialInfo(appKey);
  */
 const result = await monkedo.checkUserConnections(userId, appKeys);
 ```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
